@@ -563,7 +563,9 @@ export const updateStatus = async (
     });
     return;
   }
+
   const userId = req.user.id;
+
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -577,12 +579,42 @@ export const updateStatus = async (
       });
       return;
     }
+
     const updatedUser = await prisma.user.update({
       where: { id: userId, email: req.user.email, name: req.user.name },
       data: {
         status: !user.status,
       },
     });
+
+    if (user.status) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Set time to the start of the day
+
+      const orderItems = await prisma.orderItem.findMany({
+        where: {
+          userId: userId,
+          nextDate: {
+            lt: today, // Find orderItems where nextDate is less than today
+          },
+        },
+      });
+
+      if (orderItems.length > 0) {
+        await prisma.orderItem.updateMany({
+          where: {
+            userId: userId,
+            nextDate: {
+              lt: today,
+            },
+          },
+          data: {
+            nextDate: today, // Update nextDate to today
+          },
+        });
+      }
+    }
+
     res.status(200).json({
       success: true,
       message: "User status updated successfully",
