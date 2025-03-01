@@ -1,6 +1,7 @@
 import server from "./server";
 import dotenv from "dotenv";
 import "./utils/Tasks/Schedule1"
+import "./utils/Tasks/Schedule2"
 
 dotenv.config();
 
