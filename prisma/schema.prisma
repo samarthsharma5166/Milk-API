@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String      @id @default(uuid())
+  name         String
+  email        String      @unique
+  password     String
+  contactNo    String      @unique
+  city         String
+  state        String
+  otp          String?
+  otpExpiresAt DateTime?
+  address      String
+  altAddress   String?
+  status       Boolean      @default(true)
+  walletId     String      @unique 
+  pincode      String
+  role         Role        @default(USER)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  coordinates  String
+  order        Order[]
+  orderItems   OrderItem[]
+  wallet       Wallet      @relation(fields: [walletId], references: [id], onDelete: Cascade)
+}
+
+model Wallet {
+  id           String        @id @default(uuid())
+  userId       String ?       @unique
+  balance      Decimal       @default(0.0)
+  transactions Transaction[]
+  user         User?
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  walletId    String
+  type        String
+  amount      Decimal
+  description String?
+  createdAt   DateTime @default(now())
+  wallet      Wallet   @relation(fields: [walletId], references: [id])
+}
+
+model Product {
+  id               String           @id @default(uuid())
+  title            String           @db.VarChar(255)
+  description      String
+  price            Decimal
+  unit             String           @db.VarChar(50)
+  volumes          String[]
+  minQuantity      Int              @default(1)
+  maxQuantity      Int              @default(10)
+  stockQuantity    Int              @default(0)
+  isOutOfStock     Boolean          @default(false)
+  category         String           @db.VarChar(100)
+  taxRate          String?
+  image            String
+  deliveryType     DeliveryType
+  sgst             String?
+  cgst             String?
+  subscriptionType String[]
+  startDate        DateTime?
+  discount         Decimal?         @default(0.00)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  orderItems       OrderItem[]
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  userId      String
+  totalAmount Float
+  status      OrderStatus
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  user        User        @relation(fields: [userId], references: [id])
+  orderItems  OrderItem[]
+}
+
+model OrderItem {
+  id               String           @id @default(uuid())
+  productId        String
+  title            String?
+  image            String?
+  userId           String
+  price            Decimal
+  quantity         Int
+  subscriptionType SubscriptionType
+  deliveryTime     DeliveryTime
+  startDate        DateTime
+  nextDate         DateTime?
+  address          String
+  volume           String
+  coordinates      String
+  otp              String?
+  otpExpiresAt     DateTime?
+  orderStatus      OrderStatus
+  totalPrice       Float
+  orderId          String
+  deliveryPersonId String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  order            Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  Product          Product          @relation(fields: [productId], references: [id])
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveryPerson   DeliveryPerson?  @relation(fields: [deliveryPersonId], references: [id], onDelete: SetNull, name: "DeliveryPersonOrderItems")
+  delivery         Delivery?
+  invoiceUrl       String?
+}
+
+model DeliveryPerson{
+  id             String         @id @default(uuid())
+  name           String
+  email          String         @unique
+  password       String
+  contactNo      String         @unique
+  vehicleNumber  String?
+  aadhareNo      String
+  status         Boolean        @default(true)
+  zoneId         String?
+  zoneCoordinates String?
+  currentLocation String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  orders          OrderItem[]   @relation("DeliveryPersonOrderItems")
+  deliveries      Delivery[]    @relation("DeliveryPersonDeliveries")    
+  zone           Zone?         @relation(fields: [zoneId], references: [id],name: "ZoneDeliveryPersons")
+} 
+
+model Zone {
+  id              String          @id @default(uuid())
+  name            String          @unique
+  pincodes        String[]      
+  city         String
+  state        String  
+  coordinates     String?         
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deliveryPersons DeliveryPerson[] @relation("ZoneDeliveryPersons")
+}
+
+model Delivery {
+  id               String          @id @default(uuid())
+  orderItemId      String           @unique
+  deliveryPersonId String
+  deliveryTime     DeliveryTime
+  status           DeliveryStatus   @default(SCHEDULED)
+  address          String
+  DeliveryCoordinates  String
+  startTime        DateTime?
+  endTime          DateTime?
+  currentLocation  String?
+  notes            String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  orderItem        OrderItem        @relation(fields: [orderItemId], references: [id])
+  deliveryPerson   DeliveryPerson   @relation(fields: [deliveryPersonId], references: [id], name: "DeliveryPersonDeliveries")
+}
+
+model BlackListToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime 
+  @@index([createdAt])
+}
+
+
+
+enum Role {
+  USER
+  ADMIN
+  MANAGER
+}
+
+enum DeliveryType {
+  subscription
+  one_time
+}
+
+enum SubscriptionType {
+  DAILY
+  ALTERNATE
+  ONE_TIME
+}
+
+enum OrderStatus {
+  PENDING
+  SKIPPED
+  DELIVERED
+  PICKED_UP
+}
+
+enum DeliveryStatus {
+  SCHEDULED
+  IN_PROGRESS
+  DELIVERED
+  SKIPPED
+}
+
+enum DeliveryTime {
+  MORNING
+  EVENING
+}
