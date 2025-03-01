@@ -38,7 +38,11 @@ cloudinary.v2.config({
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:8081"], // Set to the frontend's URL
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:8081",
+      "https://milk-admin.onrender.com",
+    ], // Set to the frontend's URL
     credentials: true, // Allow cookies and authorization headers
     methods: ["GET", "POST", "PUT", "DELETE"], // Allow specific HTTP methods
     allowedHeaders: ["Content-Type", "Authorization"], // Specify allowed headers
