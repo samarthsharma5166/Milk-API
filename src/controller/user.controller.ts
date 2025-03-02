@@ -610,6 +610,7 @@ export const updateStatus = async (
           },
           data: {
             nextDate: today, // Update nextDate to today
+            orderStatus: "PENDING",
           },
         });
       }
