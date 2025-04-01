@@ -133,7 +133,7 @@ export function getProductsById(req: AuthRequest,res: Response,next: NextFunctio
 
 export async function updateProduct(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-         console.log(req.body);
+         console.log("update product",req.body);
          const { id } = req.params;
          const validateProductData = UpdateProductDataSchema.safeParse({
            ...req.body,
@@ -162,6 +162,7 @@ export async function updateProduct(req: AuthRequest, res: Response, next: NextF
             id,
           },
         });
+
         if (!existingProduct) {
           res.status(404).json({
             success: false,
@@ -169,6 +170,7 @@ export async function updateProduct(req: AuthRequest, res: Response, next: NextF
           });
           return;
         }
+        console.log(validateProductData.data);
         const data = await prisma.product.update({
             where: {
               id,
@@ -179,6 +181,7 @@ export async function updateProduct(req: AuthRequest, res: Response, next: NextF
             }
           })
           
+          console.log(data)
         res.status(200).json({
             success: true,
             message: "product updated successfully",

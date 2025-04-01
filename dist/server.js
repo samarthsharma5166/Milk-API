@@ -36,12 +36,19 @@ cloudinary_1.default.v2.config({
     api_secret: process.env.CLOUD_API_SECRET
 });
 app.use((0, cors_1.default)({
-    origin: ["http://localhost:5173", "http://localhost:8081"], // Set to the frontend's URL
+    origin: [
+        "http://localhost:5173",
+        "http://localhost:8081",
+        "https://milk-admin.onrender.com",
+    ], // Set to the frontend's URL
     credentials: true, // Allow cookies and authorization headers
     methods: ["GET", "POST", "PUT", "DELETE"], // Allow specific HTTP methods
     allowedHeaders: ["Content-Type", "Authorization"], // Specify allowed headers
 }));
 app.use(express_1.default.json());
+app.get("/", (req, res) => {
+    res.send("heloooo");
+});
 // Define routes for user
 app.use("/api/v1/user", user_route_1.default);
 // Defining routes for product 

@@ -93,8 +93,12 @@ export const UpdateProductDataSchema = z.object({
   price: z
     .string()
     .regex(/^\d+(\.\d{1,2})?$/, "Invalid price format") // Ensures proper decimal format
-    .transform((val) => parseFloat(val)).optional(),
+    .transform((val) => parseFloat(val))
+    .optional(),
   unit: z.string().min(1, { message: "Unit is required" }).optional(),
+  volumes: z
+    .array(z.string())
+    .min(1, { message: "At least one volume is required" }),
   stockQuantity: z
     .number()
     .min(0, { message: "Stock quantity must be at least 0" })

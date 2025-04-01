@@ -73,16 +73,23 @@ function confirmOrder(req, res, next) {
                 console.log("walledData", walletData);
                 if (!walletData)
                     throw new Error("Wallet not found");
-                const totalPrice = (Number(product.price) / Number(product.volumes[0])) *
-                    Number(volume) *
-                    Number(quantity);
+                const sgst = parseFloat(product.sgst || "0");
+                const cgst = parseFloat(product.cgst || "0");
+                const totalTaxRate = sgst + cgst; // Total GST tax rate
+                console.log("QQQ", quantity);
+                // Calculate tax amount
+                const basePrice = parseFloat(product.price.toString());
+                const totalBaseAmount = basePrice * quantity * (volume / parseFloat(product.volumes[0]));
+                const taxAmount = (totalBaseAmount * totalTaxRate) / 100;
+                const totalAmount = totalBaseAmount + taxAmount; // Final amount including GST
                 let order = yield tx.order.findFirst({
                     where: { userId: user.id },
                     take: 1,
                 });
-                if (Number(walletData.balance) < totalPrice && (Number(walletData.balance) < Number(order === null || order === void 0 ? void 0 : order.totalAmount) + Number(totalPrice)))
+                if (Number(walletData.balance) < totalAmount) {
                     throw new Error("Insufficient balance");
-                console.log('order', order);
+                }
+                console.log("order", order);
                 if (!order) {
                     order = yield tx.order.create({
                         data: {
@@ -109,12 +116,12 @@ function confirmOrder(req, res, next) {
                         address: userData.address,
                         coordinates: userData.coordinates,
                         orderStatus: "PENDING",
-                        totalPrice,
+                        totalPrice: totalAmount,
                     },
                 });
                 yield tx.order.update({
                     where: { id: order.id },
-                    data: { totalAmount: order.totalAmount + totalPrice },
+                    data: { totalAmount: order.totalAmount + totalAmount },
                 });
                 // Assign delivery to delivery person
                 const deliveryBoys = yield tx.deliveryPerson.findMany({
@@ -166,12 +173,17 @@ function confirmOrder(req, res, next) {
                     const invoiceData = {
                         currency: "INR",
                         taxNotation: "GST",
+                        marginTop: 50,
+                        marginRight: 50,
+                        marginLeft: 50,
+                        marginBottom: 50,
                         sender: {
                             company: "Your Milk Delivery",
                             address: "123 Street, City, India",
                             zip: "123456",
                             city: "Your City",
                             country: "India",
+                            taxId: "GSTIN123456789", // Replace with actual GSTIN
                         },
                         client: {
                             company: user.name,
@@ -180,19 +192,31 @@ function confirmOrder(req, res, next) {
                             city: "Your City",
                             country: "India",
                         },
-                        information: {
-                            number: `INV-${order.id}`,
-                            date: new Date().toISOString().split("T")[0],
-                        },
+                        invoiceNumber: `INV-${order.id}`,
+                        invoiceDate: new Date().toISOString().split("T")[0],
                         products: [
                             {
                                 quantity: quantity,
                                 description: `${product.title} (${volume} ${product.unit})`,
-                                taxRate: 0,
-                                price: parseFloat(product.price.toString()),
+                                price: basePrice,
+                                taxRate: totalTaxRate, // Total GST tax rate
+                                sgst: sgst, // SGST %
+                                cgst: cgst, // CGST %
+                                sgstAmount: ((totalBaseAmount * sgst) / 100).toFixed(2),
+                                cgstAmount: ((totalBaseAmount * cgst) / 100).toFixed(2),
+                                totalBaseAmount: totalBaseAmount.toFixed(2),
+                                taxAmount: taxAmount.toFixed(2), // Total GST amount
+                                totalAmount: totalAmount.toFixed(2), // Final price including GST
                             },
                         ],
-                        bottomNotice: "Thank you for your purchase!",
+                        total: {
+                            subtotal: totalBaseAmount.toFixed(2),
+                            sgst: `${sgst} %`,
+                            cgst: `${cgst} %`,
+                            totalTaxRate: taxAmount.toFixed(2),
+                            grandTotal: totalAmount.toFixed(2),
+                        },
+                        bottomNotice: "Thank you for your purchase! Prices include GST where applicable.",
                     };
                     const updateOrderItem = yield tx.orderItem.update({
                         where: { id: orderItem.id },
@@ -203,7 +227,9 @@ function confirmOrder(req, res, next) {
                     return { updateOrderItem, delivery, invoiceData }; // This will be returned correctly
                 }
                 throw new Error("No active delivery persons available");
-            }));
+            }), {
+                timeout: 10000,
+            });
             const invoiceUrl = yield (0, invoice_1.genrateInvoice)(result.invoiceData, result.updateOrderItem.id);
             console.log(invoiceUrl);
             const orderItem = yield Db_1.default.orderItem.update({
@@ -350,6 +376,13 @@ function getAllOrder(req, res, next) {
                             email: true,
                             contactNo: true,
                             address: true
+                        }
+                    },
+                    deliveryPerson: {
+                        select: {
+                            name: true,
+                            contactNo: true,
+                            email: true
                         }
                     }
                 }

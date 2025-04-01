@@ -34,6 +34,8 @@ function createProduct(req, res, next) {
                 });
                 return;
             }
+            console.log(validateProductData.data);
+            ``;
             const product = yield Db_1.default.product.create({
                 data: Object.assign({}, validateProductData.data),
             });
@@ -131,7 +133,7 @@ function getProductsById(req, res, next) {
 function updateProduct(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            console.log(req.body);
+            console.log("update product", req.body);
             const { id } = req.params;
             const validateProductData = userSchemas_1.UpdateProductDataSchema.safeParse(Object.assign(Object.assign({}, req.body), { minQuantity: Number(req.body.minQuantity), maxQuantity: Number(req.body.maxQuantity), discount: req.body.discount
                     ? parseFloat(req.body.discount)
@@ -159,12 +161,14 @@ function updateProduct(req, res, next) {
                 });
                 return;
             }
+            console.log(validateProductData.data);
             const data = yield Db_1.default.product.update({
                 where: {
                     id,
                 },
                 data: Object.assign(Object.assign({}, validateProductData.data), { updatedAt: new Date() })
             });
+            console.log(data);
             res.status(200).json({
                 success: true,
                 message: "product updated successfully",

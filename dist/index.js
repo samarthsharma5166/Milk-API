@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const server_1 = __importDefault(require("./server"));
 const dotenv_1 = __importDefault(require("dotenv"));
 require("./utils/Tasks/Schedule1");
+require("./utils/Tasks/Schedule2");
 dotenv_1.default.config();
 const PORT = process.env.PORT || 4000;
 server_1.default.listen(PORT, () => {

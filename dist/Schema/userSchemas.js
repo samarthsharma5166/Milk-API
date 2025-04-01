@@ -66,6 +66,8 @@ exports.ProductDataSchema = zod_1.z.object({
         .transform((val) => parseFloat(val)).optional(), // Matches Float in Prisma
     createdAt: zod_1.z.date().optional(), // Prisma auto-generates this
     updatedAt: zod_1.z.date().optional(), // Prisma auto-updates this
+    sgst: zod_1.z.string().min(1, { message: "SGST is required" }),
+    cgst: zod_1.z.string().min(1, { message: "CGST is required" }),
 });
 exports.UpdateProductDataSchema = zod_1.z.object({
     title: zod_1.z.string().min(3, { message: "Title is required" }).optional(),
@@ -76,8 +78,12 @@ exports.UpdateProductDataSchema = zod_1.z.object({
     price: zod_1.z
         .string()
         .regex(/^\d+(\.\d{1,2})?$/, "Invalid price format") // Ensures proper decimal format
-        .transform((val) => parseFloat(val)).optional(),
+        .transform((val) => parseFloat(val))
+        .optional(),
     unit: zod_1.z.string().min(1, { message: "Unit is required" }).optional(),
+    volumes: zod_1.z
+        .array(zod_1.z.string())
+        .min(1, { message: "At least one volume is required" }),
     stockQuantity: zod_1.z
         .number()
         .min(0, { message: "Stock quantity must be at least 0" })

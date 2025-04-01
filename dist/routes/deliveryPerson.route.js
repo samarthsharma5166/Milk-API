@@ -12,6 +12,8 @@ router.put("/pickedUp/:orderId/:deliveryId", authMiddleware_1.authMiddleware, de
 router.put("/delivered/:orderId/:deliveryId", authMiddleware_1.authMiddleware, deliveryPerson_controller_1.pickDeliveries);
 router.put("/delivered/otp/:orderId/:deliveryId", authMiddleware_1.authMiddleware, deliveryPerson_controller_1.sendDeliveryOtp);
 router.put("/delivered/confirm/:orderId/:deliveryId", authMiddleware_1.authMiddleware, deliveryPerson_controller_1.confirmDelivery);
-// admin 
 router.get("/getDeliveryPersons", authMiddleware_1.authMiddleware, authMiddleware_1.isValidUser, deliveryPerson_controller_1.getAllDeliveryPerson);
+router.put("/shift-delivery/:deliveryId/:newDeliveryPersonId", authMiddleware_1.authMiddleware, deliveryPerson_controller_1.shiftDelivery);
+router.delete("/delete-delivery-person/:deliveryPersonId", authMiddleware_1.authMiddleware, authMiddleware_1.isValidUser, deliveryPerson_controller_1.deleteDeliveryPerson);
+router.put("/change-delivery/:orderItemId/:newDeliveryPersonId", authMiddleware_1.authMiddleware, deliveryPerson_controller_1.changeDeliveryForOrderItem);
 exports.default = router;

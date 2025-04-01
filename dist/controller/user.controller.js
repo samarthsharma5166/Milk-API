@@ -174,29 +174,39 @@ const OtpSender = (req, res, next) => __awaiter(void 0, void 0, void 0, function
                 otpExpiresAt: otpExpireAt,
             },
         });
-        const message = `Dear User,
-
-Your One-Time Password (OTP) for logging into your account is:
-
-**OTP: ${otp}**
-
-This OTP is valid for the next 5 minutes. Please do not share this OTP with anyone, as it is intended for your use only.
-
-For your security:
-- Never share your OTP with anyone, including support staff.
-- If you did not request this OTP, please contact our support team immediately at [support email] or [support phone number].
-
-Thank you for choosing [Your Company Name]. We are committed to keeping your account secure.
-
-Best regards,  
-[Your Company Name]  
-[Your Contact Information]  
-[Your Website URL]`;
         const mailOptions = {
             from: process.env.EMAIL,
             to: user.email,
             subject: "Your One-Time Password (OTP) for Secure Login",
-            text: message,
+            html: `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #f9f9f9;">
+    <h2 style="color: #4CAF50; text-align: center;">🔐 Secure Login OTP</h2>
+    <p>Dear User,</p>
+    <p>Your One-Time Password (OTP) for logging into your account is:</p>
+    <div style="text-align: center; font-size: 24px; font-weight: bold; color: #ff5722; border: 2px dashed #ff5722; display: inline-block; padding: 10px 20px; margin: 20px 0; border-radius: 8px;">
+      🔑 ${otp}
+    </div>
+    <p><strong>This OTP is valid for the next 5 minutes.</strong> Please do not share this OTP with anyone, as it is intended for your use only.</p>
+    <h3>For your security:</h3>
+    <ul>
+      <li>Never share your OTP with anyone, including support staff.</li>
+      <li>If you did not request this OTP, please contact our support team immediately.</li>
+    </ul>
+    <p style="text-align: center;">
+      📧 <a href="mailto:support@example.com" style="color: #007bff; text-decoration: none;">support@example.com</a><br>
+      📞 <a href="tel:+18001234567" style="color: #007bff; text-decoration: none;">+1-800-123-4567</a>
+    </p>
+    <p style="text-align: center;">Thank you for choosing <strong>Your Company Name</strong>. We are committed to keeping your account secure.</p>
+    <div style="text-align: center; margin-top: 20px;">
+      <a href="https://www.example.com" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Visit Our Website</a>
+    </div>
+    <p style="text-align: center; font-size: 12px; color: #777; margin-top: 20px;">
+      Best regards, <br>
+      <strong>Your Company Name</strong><br>
+      <a href="https://www.example.com" style="color: #007bff; text-decoration: none;">www.example.com</a>
+    </p>
+  </div>
+  `,
         };
         yield nodeMailer_1.auth.sendMail(mailOptions);
         res.status(200).json({
@@ -535,6 +545,32 @@ const updateStatus = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
                 status: !user.status,
             },
         });
+        if (user.status) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Set time to the start of the day
+            const orderItems = yield Db_1.default.orderItem.findMany({
+                where: {
+                    userId: userId,
+                    nextDate: {
+                        lt: today, // Find orderItems where nextDate is less than today
+                    },
+                },
+            });
+            if (orderItems.length > 0) {
+                yield Db_1.default.orderItem.updateMany({
+                    where: {
+                        userId: userId,
+                        nextDate: {
+                            lt: today,
+                        },
+                    },
+                    data: {
+                        nextDate: today, // Update nextDate to today
+                        orderStatus: "PENDING",
+                    },
+                });
+            }
+        }
         res.status(200).json({
             success: true,
             message: "User status updated successfully",
