@@ -8,6 +8,7 @@ import { DeliveryPerson } from "@prisma/client";
 import easyinvoice from "easyinvoice";
 import {v2} from "cloudinary";
 import { genrateInvoice } from "../utils/invoice";
+import { auth } from "../utils/nodeMailer";
 
 
 type DeliveryPersonType = {
@@ -89,7 +90,7 @@ export async function confirmOrder(
       const sgst = parseFloat(product.sgst || "0");
       const cgst = parseFloat(product.cgst || "0");
       const totalTaxRate = sgst + cgst; // Total GST tax rate
-      console.log("QQQ",quantity)
+  
 
       // Calculate tax amount
       const basePrice = parseFloat(product.price.toString());
@@ -106,7 +107,6 @@ export async function confirmOrder(
         throw new Error("Insufficient balance");
       }
 
-      console.log("order", order);
       if (!order) {
         order = await tx.order.create({
           data: {
@@ -177,11 +177,6 @@ export async function confirmOrder(
         }
       });
 
-      if (!nearestDeliveryPerson) {
-        throw new Error("No active delivery persons available");
-      }
-      // @ts-ignore
-      console.log(nearestDeliveryPerson.id, shortestDistance);
 
       // @ts-ignore
       if (nearestDeliveryPerson && nearestDeliveryPerson.id) {
@@ -270,9 +265,48 @@ export async function confirmOrder(
       {
         where: { id: result.updateOrderItem.id },
         data: { invoiceUrl: invoiceUrl },
-      }
+        include: { delivery: true, user: true },
+      },
+  
     )
+  
+    const deliveryPersonId = orderItem?.deliveryPersonId;
 
+    if(!deliveryPersonId){
+      return
+    }
+    const deliveryPerson = await prisma.deliveryPerson.findUnique({
+      where: { id: deliveryPersonId },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL,
+      to: deliveryPerson?.email,
+      subject: `New Delivery Assigned - Order from ${orderItem?.user?.name}`,
+      html: `
+        <h2>New Delivery Assigned</h2>
+        <p>Hello ${deliveryPerson?.name},</p>
+        <p>A new order has been assigned to you. Below are the order details:</p>
+        <ul>
+          <li><strong>Order ID:</strong> ${orderItem?.id}</li>
+          <li><strong>Customer Name:</strong> ${orderItem?.user?.name}</li>
+          <li><strong>Delivery Address:</strong> ${orderItem?.address}</li>
+          <li><strong>Delivery Time:</strong> ${orderItem?.deliveryTime}</li>
+          <li><strong>Product:</strong> ${orderItem?.title} (${
+        orderItem?.volume
+      })</li>
+          <li><strong>Quantity:</strong> ${orderItem?.quantity}</li>
+          <li><strong>Total Price:</strong> ₹${orderItem?.totalPrice.toFixed(
+            2
+          )}</li>
+        </ul>
+        <p>Please make sure to deliver the order on time and update the status accordingly.</p>
+        <p>Thank you,</p>
+        <p><strong>Your Milk Delivery Team</strong></p>
+      `,
+    };
+
+  await auth.sendMail(mailOptions);
 
 
     res.status(201).json({

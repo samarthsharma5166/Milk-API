@@ -94,4 +94,6 @@ exports.UpdateProductDataSchema = zod_1.z.object({
     deliveryType: zod_1.z.nativeEnum(client_1.DeliveryType).optional(), // ✅ Now using Prisma's enum
     createdAt: zod_1.z.date().optional(), // ✅ Prisma handles default values
     updatedAt: zod_1.z.date().optional(),
+    sgst: zod_1.z.string().min(1, { message: "SGST is required" }),
+    cgst: zod_1.z.string().min(1, { message: "CGST is required" }),
 });

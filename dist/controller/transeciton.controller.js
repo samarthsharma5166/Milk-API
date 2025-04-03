@@ -25,7 +25,11 @@ const getAllTransection = (req, res, next) => __awaiter(void 0, void 0, void 0, 
             });
             return;
         }
-        const transections = yield Db_1.default.transaction.findMany();
+        const transections = yield Db_1.default.transaction.findMany({
+            orderBy: {
+                createdAt: "desc"
+            }
+        });
         console.log(transections);
         res.status(200).json({
             success: true,
@@ -44,13 +48,16 @@ const getMyTransection = (req, res, next) => __awaiter(void 0, void 0, void 0, f
         const transaction = yield Db_1.default.transaction.findMany({
             where: {
                 walletId: id
-            }
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
         });
         console.log(transaction);
         res.status(200).json({
             success: true,
-            message: "Transection data fetched successfully",
-            transaction
+            message: "Transection` data fetched successfully",
+            transaction,
         });
     }
     catch (error) {

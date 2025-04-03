@@ -16,9 +16,22 @@ const server = http.createServer(app);
 
 // WebSocket Setup
 export const wss = new WebSocketServer({ server });
+// const users = [];
 
-wss.on("connection", (ws) => {
+wss.on("connection", (ws,request) => {
   console.log("New WebSocket client connected");
+  // const url = request.url;
+  // if (!url) {
+  //   ws.close();
+  //   return;
+  // }
+  //  const queryParams = new URLSearchParams(url.split("?")[1] || "");
+  //  const token = queryParams.get("token");
+  //  if (!token) {
+  //    ws.close();
+  //    return;
+  //  }
+  
 
   ws.on("message", (message) => {
     console.log("Received from client:", message.toString());

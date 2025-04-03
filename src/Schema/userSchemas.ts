@@ -109,6 +109,8 @@ export const UpdateProductDataSchema = z.object({
   deliveryType: z.nativeEnum(DeliveryType).optional(), // ✅ Now using Prisma's enum
   createdAt: z.date().optional(), // ✅ Prisma handles default values
   updatedAt: z.date().optional(),
+  sgst: z.string().min(1, { message: "SGST is required" }),
+  cgst: z.string().min(1, { message: "CGST is required" }),
 });
 
 export type UpdatedProductData = z.infer<typeof UpdateProductDataSchema>;

@@ -25,6 +25,7 @@ model User {
   role         Role        @default(USER)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+  socket       Int         @default(autoincrement())
   coordinates  String
   order        Order[]
   orderItems   OrderItem[]
@@ -97,6 +98,7 @@ model OrderItem {
   deliveryTime     DeliveryTime
   startDate        DateTime
   nextDate         DateTime?
+  endDate          DateTime?
   address          String
   volume           String
   coordinates      String
@@ -172,8 +174,6 @@ model BlackListToken {
   expiresAt DateTime 
   @@index([createdAt])
 }
-
-
 
 enum Role {
   USER

@@ -20,8 +20,20 @@ const app = (0, express_1.default)();
 const server = http_1.default.createServer(app);
 // WebSocket Setup
 exports.wss = new ws_1.WebSocketServer({ server });
-exports.wss.on("connection", (ws) => {
+// const users = [];
+exports.wss.on("connection", (ws, request) => {
     console.log("New WebSocket client connected");
+    // const url = request.url;
+    // if (!url) {
+    //   ws.close();
+    //   return;
+    // }
+    //  const queryParams = new URLSearchParams(url.split("?")[1] || "");
+    //  const token = queryParams.get("token");
+    //  if (!token) {
+    //    ws.close();
+    //    return;
+    //  }
     ws.on("message", (message) => {
         console.log("Received from client:", message.toString());
         ws.send("Message received by server!");

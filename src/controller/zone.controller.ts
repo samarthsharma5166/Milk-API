@@ -106,6 +106,13 @@ export async function updateZone(req: AuthRequest, res: Response) {
 export async function deleteZone(req: AuthRequest, res: Response) {
   const { id } = req.params;
   try {
+    const deliveryPerson = await prisma.deliveryPerson.updateMany({
+      where: { zoneId: id },
+      data: {
+        zoneId: null,
+        zoneCoordinates: null
+      },
+    })
     const deletedZone = await prisma.zone.delete({
       where: { id },
     });

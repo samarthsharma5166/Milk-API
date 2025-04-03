@@ -123,6 +123,13 @@ function deleteZone(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const { id } = req.params;
         try {
+            const deliveryPerson = yield Db_1.default.deliveryPerson.updateMany({
+                where: { zoneId: id },
+                data: {
+                    zoneId: null,
+                    zoneCoordinates: null
+                },
+            });
             const deletedZone = yield Db_1.default.zone.delete({
                 where: { id },
             });

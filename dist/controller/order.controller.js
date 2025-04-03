@@ -20,8 +20,10 @@ exports.getMyOrder = getMyOrder;
 const Db_1 = __importDefault(require("../DB/Db"));
 const otpUtils_1 = require("../utils/otpUtils");
 const invoice_1 = require("../utils/invoice");
+const nodeMailer_1 = require("../utils/nodeMailer");
 function confirmOrder(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
+        var _a, _b;
         try {
             const { quantity, subscriptionType, deliveryTime, startDate, volume } = req.body;
             const productId = req.params.productId;
@@ -76,7 +78,6 @@ function confirmOrder(req, res, next) {
                 const sgst = parseFloat(product.sgst || "0");
                 const cgst = parseFloat(product.cgst || "0");
                 const totalTaxRate = sgst + cgst; // Total GST tax rate
-                console.log("QQQ", quantity);
                 // Calculate tax amount
                 const basePrice = parseFloat(product.price.toString());
                 const totalBaseAmount = basePrice * quantity * (volume / parseFloat(product.volumes[0]));
@@ -89,7 +90,6 @@ function confirmOrder(req, res, next) {
                 if (Number(walletData.balance) < totalAmount) {
                     throw new Error("Insufficient balance");
                 }
-                console.log("order", order);
                 if (!order) {
                     order = yield tx.order.create({
                         data: {
@@ -152,11 +152,6 @@ function confirmOrder(req, res, next) {
                         nearestDeliveryPerson = person;
                     }
                 });
-                if (!nearestDeliveryPerson) {
-                    throw new Error("No active delivery persons available");
-                }
-                // @ts-ignore
-                console.log(nearestDeliveryPerson.id, shortestDistance);
                 // @ts-ignore
                 if (nearestDeliveryPerson && nearestDeliveryPerson.id) {
                     const delivery = yield tx.delivery.create({
@@ -235,7 +230,38 @@ function confirmOrder(req, res, next) {
             const orderItem = yield Db_1.default.orderItem.update({
                 where: { id: result.updateOrderItem.id },
                 data: { invoiceUrl: invoiceUrl },
+                include: { delivery: true, user: true },
             });
+            const deliveryPersonId = orderItem === null || orderItem === void 0 ? void 0 : orderItem.deliveryPersonId;
+            if (!deliveryPersonId) {
+                return;
+            }
+            const deliveryPerson = yield Db_1.default.deliveryPerson.findUnique({
+                where: { id: deliveryPersonId },
+            });
+            const mailOptions = {
+                from: process.env.EMAIL,
+                to: deliveryPerson === null || deliveryPerson === void 0 ? void 0 : deliveryPerson.email,
+                subject: `New Delivery Assigned - Order from ${(_a = orderItem === null || orderItem === void 0 ? void 0 : orderItem.user) === null || _a === void 0 ? void 0 : _a.name}`,
+                html: `
+        <h2>New Delivery Assigned</h2>
+        <p>Hello ${deliveryPerson === null || deliveryPerson === void 0 ? void 0 : deliveryPerson.name},</p>
+        <p>A new order has been assigned to you. Below are the order details:</p>
+        <ul>
+          <li><strong>Order ID:</strong> ${orderItem === null || orderItem === void 0 ? void 0 : orderItem.id}</li>
+          <li><strong>Customer Name:</strong> ${(_b = orderItem === null || orderItem === void 0 ? void 0 : orderItem.user) === null || _b === void 0 ? void 0 : _b.name}</li>
+          <li><strong>Delivery Address:</strong> ${orderItem === null || orderItem === void 0 ? void 0 : orderItem.address}</li>
+          <li><strong>Delivery Time:</strong> ${orderItem === null || orderItem === void 0 ? void 0 : orderItem.deliveryTime}</li>
+          <li><strong>Product:</strong> ${orderItem === null || orderItem === void 0 ? void 0 : orderItem.title} (${orderItem === null || orderItem === void 0 ? void 0 : orderItem.volume})</li>
+          <li><strong>Quantity:</strong> ${orderItem === null || orderItem === void 0 ? void 0 : orderItem.quantity}</li>
+          <li><strong>Total Price:</strong> ₹${orderItem === null || orderItem === void 0 ? void 0 : orderItem.totalPrice.toFixed(2)}</li>
+        </ul>
+        <p>Please make sure to deliver the order on time and update the status accordingly.</p>
+        <p>Thank you,</p>
+        <p><strong>Your Milk Delivery Team</strong></p>
+      `,
+            };
+            yield nodeMailer_1.auth.sendMail(mailOptions);
             res.status(201).json({
                 success: true,
                 message: "Order confirmed successfully",

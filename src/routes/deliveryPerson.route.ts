@@ -14,7 +14,6 @@ router.put("/delivered/:orderId/:deliveryId",authMiddleware, pickDeliveries);
 router.put("/delivered/otp/:orderId/:deliveryId",authMiddleware, sendDeliveryOtp);
 router.put("/delivered/confirm/:orderId/:deliveryId",authMiddleware, confirmDelivery);
 router.get("/getDeliveryPersons",authMiddleware,isValidUser,getAllDeliveryPerson);
-
 router.put("/shift-delivery/:deliveryId/:newDeliveryPersonId",authMiddleware,shiftDelivery);
 router.delete("/delete-delivery-person/:deliveryPersonId",authMiddleware,isValidUser,deleteDeliveryPerson);
 router.put("/change-delivery/:orderItemId/:newDeliveryPersonId",authMiddleware,changeDeliveryForOrderItem);

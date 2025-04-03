@@ -13,7 +13,11 @@ export const getAllTransection = async(req:AuthRequest, res:Response,next:NextFu
             });
             return
         }
-        const transections = await prisma.transaction.findMany()
+        const transections = await prisma.transaction.findMany({
+            orderBy:{
+                createdAt:"desc"
+            }
+        })
         console.log(transections)
         res.status(200).json({
             success: true,
@@ -31,14 +35,17 @@ export const getMyTransection = async(req:AuthRequest,res:Response,next:NextFunc
         const transaction = await prisma.transaction.findMany({
             where:{
                 walletId:id
-            }
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
         })
         console.log(transaction)
         res.status(200).json({
-            success: true,
-            message: "Transection data fetched successfully",
-            transaction
-        })
+          success: true,
+          message: "Transection` data fetched successfully",
+          transaction,
+        });
     } catch (error) {
         console.log(error)
         res.status(500).json({ error: "Internal server error" });
