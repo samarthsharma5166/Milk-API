@@ -20,6 +20,7 @@ const otpUtils_1 = require("../utils/otpUtils");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const nodeMailer_1 = require("../utils/nodeMailer");
 const axios_1 = __importDefault(require("axios"));
+const server_1 = require("../server");
 const SignUp = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = req.body;
@@ -133,6 +134,7 @@ const OtpSender = (req, res, next) => __awaiter(void 0, void 0, void 0, function
     try {
         console.log("come here otp send");
         const userData = req.body;
+        console.log(req.body);
         const validatedUser = yield userSchemas_1.userSignInSchema.safeParse(userData);
         if (validatedUser.success === false) {
             res.status(400).json({
@@ -617,6 +619,8 @@ const addMoneyToWallet = (req, res) => __awaiter(void 0, void 0, void 0, functio
                 },
             },
         });
+        const ws = server_1.userSockets.get(userId);
+        ws === null || ws === void 0 ? void 0 : ws.send(JSON.stringify({ type: "ADD_MONEY", amount: amount }));
         res.status(200).json({
             message: "Money added successfully.",
             wallet: updatedWallet,

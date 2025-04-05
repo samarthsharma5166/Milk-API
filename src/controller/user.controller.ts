@@ -14,6 +14,7 @@ import bcrypt from "bcrypt";
 import { auth } from "../utils/nodeMailer";
 import { AuthRequest } from "../types/types";
 import axios from "axios";
+import { userSockets } from "../server";
 
 export const SignUp = async (
   req: Request,
@@ -138,6 +139,7 @@ export const OtpSender = async (
   try {
     console.log("come here otp send");
     const userData: UserSignIn = req.body;
+    console.log(req.body)
     const validatedUser = await userSignInSchema.safeParse(userData);
     if (validatedUser.success === false) {
       res.status(400).json({
@@ -665,6 +667,9 @@ export const addMoneyToWallet = async (req: AuthRequest, res: Response) => {
         },
       },
     });
+
+    const ws = userSockets.get(userId)
+    ws?.send(JSON.stringify({ type: "ADD_MONEY", amount: amount }))
 
     res.status(200).json({
       message: "Money added successfully.",

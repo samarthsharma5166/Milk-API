@@ -1,6 +1,7 @@
 import express from "express";
 import http from "http";
 import { WebSocketServer } from "ws";
+import { WebSocket } from "ws";
 import userRoute from "./routes/user.route";
 import cors from "cors"
 import productRoute from './routes/product.route'
@@ -10,6 +11,8 @@ import transecitonRoute from './routes/transeciton.route'
 import deliveryRotue from './routes/deliveryPerson.route'
 import zoneRotue from './routes/zone.route'
 import prisma from "./DB/Db";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import jsonwebtoken from "jsonwebtoken";
 import cloudinary from "cloudinary";
 const app = express();
 const server = http.createServer(app);
@@ -18,20 +21,45 @@ const server = http.createServer(app);
 export const wss = new WebSocketServer({ server });
 // const users = [];
 
-wss.on("connection", (ws,request) => {
-  console.log("New WebSocket client connected");
-  // const url = request.url;
-  // if (!url) {
-  //   ws.close();
-  //   return;
-  // }
-  //  const queryParams = new URLSearchParams(url.split("?")[1] || "");
-  //  const token = queryParams.get("token");
-  //  if (!token) {
-  //    ws.close();
-  //    return;
-  //  }
-  
+async function checkUser(token: string): Promise<JwtPayload | null> {
+  try {
+     const secret = process.env.JWT_SECRET;
+     if (!secret) {
+       return null;
+     }
+    const decode = await jwt.verify(token, secret) as JwtPayload;
+    if (!decode) {
+      return null;
+    }
+    console.log(decode);
+    return decode;
+  } catch (e) {
+    return null;
+  }
+}
+
+export const userSockets = new Map<string, WebSocket>();
+
+wss.on("connection", async(ws,request) => {
+  const url = request.url;
+  if (!url) {
+    ws.close();
+    return;
+  }
+   const queryParams = new URLSearchParams(url.split("?")[1] || "");
+   const token = queryParams.get("token");
+   if(!token){
+    console.log("hererererer")
+     ws.close();
+     return
+   }
+   
+  const Detail = await checkUser(token);
+  if (!Detail) {
+    ws.close();
+    return;
+  }
+  userSockets.set(Detail.id, ws);
 
   ws.on("message", (message) => {
     console.log("Received from client:", message.toString());
@@ -39,8 +67,10 @@ wss.on("connection", (ws,request) => {
   });
 
   ws.on("close", () => {
-    console.log("Client disconnected");
+    console.log(`Client disconnected: ${Detail.id}`);
+    userSockets.delete(Detail.id); // Remove user from map when disconnected
   });
+
 });
 
 cloudinary.v2.config({
@@ -51,10 +81,11 @@ cloudinary.v2.config({
 
 app.use(
   cors({
-    origin: [
+     origin: [
       "http://localhost:5173",
       "http://localhost:8081",
       "https://milk-admin.onrender.com",
+      "*"
     ], // Set to the frontend's URL
     credentials: true, // Allow cookies and authorization headers
     methods: ["GET", "POST", "PUT", "DELETE"], // Allow specific HTTP methods
